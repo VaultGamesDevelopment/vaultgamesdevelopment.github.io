@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Vault Arcade</title>
+
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --panel: rgba(255,255,255,0.05);
+      --border: rgba(255,255,255,0.08);
+      --text: #e2e8f0;
+      --accent: #3b82f6;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at top, #111827, #020617);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    #sidebar {
+      width: 320px;
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      backdrop-filter: blur(10px);
+    }
+
+    #sidebar-header {
+      padding: 15px;
+      font-size: 20px;
+      font-weight: bold;
+      border-bottom: 1px solid var(--border);
+    }
+
+    #search {
+      margin: 10px;
+      padding: 8px;
+      border-radius: 6px;
+      border: none;
+      outline: none;
+      background: #0f172a;
+      color: white;
+    }
+
+    #game-list {
+      overflow-y: auto;
+      padding: 10px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .game-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      cursor: pointer;
+      transition: 0.2s;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .game-card:hover {
+      transform: scale(1.02);
+      background: rgba(59,130,246,0.15);
+    }
+
+    .game-card img {
+      width: 60px;
+      height: 60px;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+
+    .game-title {
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    /* Main area */
+    #main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #topbar {
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 15px;
+      background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(10px);
+    }
+
+    #game-title {
+      font-weight: bold;
+    }
+
+    #controls button {
+      margin-left: 10px;
+      padding: 6px 10px;
+      border: none;
+      border-radius: 6px;
+      background: var(--accent);
+      color: white;
+      cursor: pointer;
+    }
+
+    #player-container {
+      flex: 1;
+      position: relative;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    /* Overlay */
+    #placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 10px;
+      color: #94a3b8;
+      background: rgba(0,0,0,0.2);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <div id="sidebar-header">Vault Arcade</div>
+    <input id="search" placeholder="Search games..." />
+    <div id="game-list"></div>
+  </div>
+
+  <!-- Main -->
+  <div id="main">
+    <div id="topbar">
+      <div id="game-title">Select a game</div>
+      <div id="controls">
+        <button onclick="toggleFullscreen()">Fullscreen</button>
+        <button onclick="closeGame()">Close</button>
+      </div>
+    </div>
+
+    <div id="player-container">
+      <iframe id="game-frame"></iframe>
+      <div id="placeholder">
+        <h2>No game selected</h2>
+        <p>Choose a game from the left</p>
+      </div>
+    </div>
+  </div>
+
+<script>
+const SID = "1";
+const API_URL = `https://feeds.gamepix.com/v2/json?order=quality&page=1&pagination=48&sid=${SID}`;
+
+const gameListEl = document.getElementById("game-list");
+const frame = document.getElementById("game-frame");
+const titleEl = document.getElementById("game-title");
+const placeholder = document.getElementById("placeholder");
+const searchInput = document.getElementById("search");
+
+let gamesData = [];
+
+async function loadGames() {
+  try {
+    const res = await fetch(API_URL);
+    const data = await res.json();
+    gamesData = data.items;
+    renderGames(gamesData);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function renderGames(games) {
+  gameListEl.innerHTML = "";
+
+  games.forEach(game => {
+    const card = document.createElement("div");
+    card.className = "game-card";
+
+    card.innerHTML = `
+      <img src="${game.image}" />
+      <div>
+        <div class="game-title">${game.title}</div>
+      </div>
+    `;
+
+    card.onclick = () => loadGame(game);
+    gameListEl.appendChild(card);
+  });
+}
+
+function loadGame(game) {
+  titleEl.innerText = game.title;
+  frame.src = game.url;
+  placeholder.style.display = "none";
+}
+
+function closeGame() {
+  frame.src = "";
+  titleEl.innerText = "Select a game";
+  placeholder.style.display = "flex";
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen();
+  } else {
+    document.exitFullscreen();
+  }
+}
+
+// Search
+searchInput.addEventListener("input", (e) => {
+  const query = e.target.value.toLowerCase();
+  const filtered = gamesData.filter(g => g.title.toLowerCase().includes(query));
+  renderGames(filtered);
+});
+
+// Handle game events
+window.addEventListener("message", (e) => {
+  if (!e.data) return;
+
+  if (e.data.type === "update_score") {
+    console.log("Score:", e.data.score);
+  }
+
+  if (e.data.type === "update_level") {
+    console.log("Level:", e.data.level);
+  }
+});
+
+loadGames();
+</script>
+
+</body>
+</html>
