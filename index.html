@@ -29,7 +29,6 @@
       overflow: hidden;
     }
 
-    /* Sidebar */
     #sidebar {
       width: 320px;
       background: var(--panel);
@@ -62,6 +61,7 @@
       display: grid;
       grid-template-columns: 1fr;
       gap: 10px;
+      flex: 1;
     }
 
     .game-card {
@@ -93,7 +93,16 @@
       font-weight: bold;
     }
 
-    /* Main area */
+    #load-more {
+      margin: 10px;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: var(--accent);
+      color: white;
+      cursor: pointer;
+    }
+
     #main {
       flex: 1;
       display: flex;
@@ -136,7 +145,6 @@
       border: none;
     }
 
-    /* Overlay */
     #placeholder {
       position: absolute;
       inset: 0;
@@ -149,7 +157,6 @@
       background: rgba(0,0,0,0.2);
     }
 
-    /* Scrollbar */
     ::-webkit-scrollbar {
       width: 8px;
     }
@@ -162,14 +169,13 @@
 </head>
 <body>
 
-  <!-- Sidebar -->
   <div id="sidebar">
     <div id="sidebar-header">Vault Arcade</div>
     <input id="search" placeholder="Search games..." />
     <div id="game-list"></div>
+    <button id="load-more">Load More</button>
   </div>
 
-  <!-- Main -->
   <div id="main">
     <div id="topbar">
       <div id="game-title">Select a game</div>
@@ -190,22 +196,32 @@
 
 <script>
 const SID = "1";
-const API_URL = `https://feeds.gamepix.com/v2/json?order=quality&page=1&pagination=48&sid=${SID}`;
+const BASE_URL = `https://feeds.gamepix.com/v2/json?order=quality&pagination=48&sid=${SID}`;
 
 const gameListEl = document.getElementById("game-list");
 const frame = document.getElementById("game-frame");
 const titleEl = document.getElementById("game-title");
 const placeholder = document.getElementById("placeholder");
 const searchInput = document.getElementById("search");
+const loadMoreBtn = document.getElementById("load-more");
 
 let gamesData = [];
+let nextUrl = BASE_URL;
 
-async function loadGames() {
+async function fetchGames(url) {
+  if (!url) return;
   try {
-    const res = await fetch(API_URL);
+    const res = await fetch(url);
     const data = await res.json();
-    gamesData = data.items;
+
+    gamesData = gamesData.concat(data.items);
+    nextUrl = data.next_url;
+
     renderGames(gamesData);
+
+    if (!nextUrl) {
+      loadMoreBtn.style.display = "none";
+    }
   } catch (err) {
     console.error(err);
   }
@@ -250,14 +266,16 @@ function toggleFullscreen() {
   }
 }
 
-// Search
 searchInput.addEventListener("input", (e) => {
   const query = e.target.value.toLowerCase();
   const filtered = gamesData.filter(g => g.title.toLowerCase().includes(query));
   renderGames(filtered);
 });
 
-// Handle game events
+loadMoreBtn.addEventListener("click", () => {
+  fetchGames(nextUrl);
+});
+
 window.addEventListener("message", (e) => {
   if (!e.data) return;
 
@@ -270,7 +288,8 @@ window.addEventListener("message", (e) => {
   }
 });
 
-loadGames();
+// Initial load
+fetchGames(nextUrl);
 </script>
 
 </body>
