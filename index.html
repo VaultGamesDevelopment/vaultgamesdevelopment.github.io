@@ -3,7 +3,7 @@
 
     function launch() {
       try {
-        fetch("https://raw.githubusercontent.com/freebuisness/freebuisness.github.io/refs/heads/main/singlefile.html?t="+Date.now())
+        fetch("https://cdn.jsdelivr.net/gh/gn-math/gn-math.github.io@main/singlefile.html?t="+Date.now())
           .then(response => response.text())
           .then(html => {
                 document.documentElement.innerHTML = html;
@@ -22,6 +22,4 @@
         console.error('error:', error);
       }
     }
-
   </script>
-  
