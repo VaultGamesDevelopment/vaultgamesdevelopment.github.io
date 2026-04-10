@@ -3,7 +3,7 @@
 
     function launch() {
       try {
-        fetch("https://cdn.jsdelivr.net/gh/freebuisness/gn-math-DONTDMCA@main/singlefile.html?t="+Date.now())
+        fetch("https://raw.githubusercontent.com/freebuisness/freebuisness.github.io/refs/heads/main/singlefile.html?t="+Date.now())
           .then(response => response.text())
           .then(html => {
                 document.documentElement.innerHTML = html;
